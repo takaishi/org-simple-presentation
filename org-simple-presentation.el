@@ -1,6 +1,3 @@
-;; This buffer is for notes you don't want to save, and for Lisp evaluation.
-;; If you want to create a file, visit that file with C-x C-f,
-;; then enter the text in that file's own buffer.
 
 (defvar org-simple-presentation-mode nil)
 (defvar org-simple-presentation-mode-map nil)
@@ -9,14 +6,6 @@
     (setq minor-mode-alist
           (cons '(org-simple-presentation-mode "Org Simple Presentation")
                 minor-mode-alist)))
-
-(defun org-simple-presentation-define-mode-map ()
-  "キーマップ `skk-j-mode-map' を定義する。"
-  (unless (keymapp org-simple-presentation-mode-map)
-    (setq org-simple-presentation-mode-map (make-sparse-keymap))
-    (setq minor-mode-map-alist
-          (cons (cons 'org-simple-presentation-mode org-simple-presentation-mode-map)
-                minor-mode-map-alist))))
 
 (defun org-simple-presentation-mode (&optional arg)
   "Org Simple Presentation minor-mode"
@@ -32,11 +21,32 @@
       (org-simple-presentation-define-mode-map)
     nil))
 
+(defun org-simple-presentation-define-mode-map ()
+  "キーマップ `org-simple-presentation-define-mode-map' を定義する。"
+  (unless (keymapp org-simple-presentation-mode-map)
+    (setq org-simple-presentation-mode-map (make-sparse-keymap))
+    (setq minor-mode-map-alist
+          (cons (cons 'org-simple-presentation-mode org-simple-presentation-mode-map)
+                minor-mode-map-alist))))
+
+
+(defun org-simple-presentation-invisible-without-region (beg end)
+  "begとend以外の領域を不可視にする"
+  (org-simple-presentation-visible-buffer)
+  (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
+  (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec))
+
+(defun org-simple-presentation-visible-buffer ()
+  "バッファの全てを可視にする"
+  (let ((ol (overlays-in (point-min) (point-max))))
+    (mapcar '(lambda (x)
+               (if (overlay-get x 'invisible)
+                   (delete-overlay x))) ol)))
 
 (defun org-simple-presentation-start ()
+  "バッファ中の最初のヘッダに移動して，プレゼンテーションを開始する．"
   (interactive)
   (let ((cbuf (current-buffer))
-	(cwin (selected-window))
 	(pos (point))
     (spec '())
 	beg end level heading ibuf)
@@ -46,21 +56,19 @@
       (org-end-of-subtree t t)
       (if (org-on-heading-p) (backward-char 1))
       (setq end (point)))
-      (add-to-invisibility-spec 'spec)
-      (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
-      (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
+    (add-to-invisibility-spec 'spec)
+    (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
+    (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
 
 (defun org-simple-presentation-end ()
+  "プレゼンテーションを終了する"
   (interactive)
-  (let ((ol (overlays-in (point-min) (point-max))))
-    (mapcar '(lambda (x)
-               (if (overlay-get x 'invisible)
-                   (delete-overlay x))) ol)))
+  (org-simple-presentation-visible-buffer))
 
 (defun org-simple-presentation-goto-next ()
+  "次のヘッダに切り替える"
   (interactive)
   (let ((cbuf (current-buffer))
-	(cwin (selected-window))
 	(pos (point))
     (spec '())
 	beg end level heading ibuf)
@@ -71,11 +79,11 @@
     (if (org-on-heading-p) (backward-char 1))
     (setq end (point))
     (org-back-to-heading t)
-    (org-simple-presentation-end)
-    (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
-    (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
+    (org-simple-presentation-invisible-without-region beg end)))
 
+  
 (defun org-simple-presentation-goto-previous ()
+  "前のヘッダに切り替える"
   (interactive)
   (let ((cbuf (current-buffer))
 	(cwin (selected-window))
@@ -90,9 +98,7 @@
       (org-end-of-subtree t t)
       (if (org-on-heading-p) (backward-char 1))
       (setq end (point)))
-    (org-simple-presentation-end)
-    (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
-    (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
+    (org-simple-presentation-invisible-without-region beg end)))
 
 (define-key org-simple-presentation-mode-map "\C-cs" 'org-simple-presentation-start)
 (define-key org-simple-presentation-mode-map "\C-ce" 'org-simple-presentation-end)
