@@ -18,13 +18,6 @@
           (cons (cons 'org-simple-presentation-mode org-simple-presentation-mode-map)
                 minor-mode-map-alist))))
 
-;; (unless (assq 'org-simple-presentation-mode minor-mode-map-alist)
-;;   (setq minor-mode-map-alist
-;;         (cons (cons 'org-simple-presentation-mode org-simple-presentation-mode-map)
-;;               (minor-mode-map-alist))))
-
-
-
 (defun org-simple-presentation-mode (&optional arg)
   "Org Simple Presentation minor-mode"
   (interactive)
@@ -57,7 +50,7 @@
       (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
       (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
 
-(defun org-simple-presentation-stop ()
+(defun org-simple-presentation-end ()
   (interactive)
   (let ((ol (overlays-in (point-min) (point-max))))
     (mapcar '(lambda (x)
@@ -77,11 +70,12 @@
     (org-end-of-subtree t t)
     (if (org-on-heading-p) (backward-char 1))
     (setq end (point))
-    (org-presentation-stop)
+    (org-back-to-heading t)
+    (org-simple-presentation-end)
     (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
     (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
 
-(defun org-simple-presentation-goto-prebious ()
+(defun org-simple-presentation-goto-previous ()
   (interactive)
   (let ((cbuf (current-buffer))
 	(cwin (selected-window))
@@ -90,18 +84,19 @@
 	beg end level heading ibuf)
     (if (org-on-heading-p) (backward-char 1))
     (org-back-to-heading t)
+    (org-back-to-heading t)
     (setq beg (point))
     (save-excursion
       (org-end-of-subtree t t)
       (if (org-on-heading-p) (backward-char 1))
       (setq end (point)))
-    (org-presentation-stop)
+    (org-simple-presentation-end)
     (overlay-put (make-overlay (point-min) beg) 'invisible 'spec)
     (overlay-put (make-overlay (+ 1 end) (point-max)) 'invisible 'spec)))
 
-(global-set-key (kbd "M-n") 'org-presentation-goto-next)
-(global-set-key (kbd "M-p") 'org-presentation-goto-prebious)
-(define-key org-simple-presentation-mode-map "C-cn" 'org-simple-presentation-goto-next)
-(define-key org-simple-presentation-mode-map "C-cp" 'org-simple-presentation-goto-previous)
+(define-key org-simple-presentation-mode-map "\C-cs" 'org-simple-presentation-start)
+(define-key org-simple-presentation-mode-map "\C-ce" 'org-simple-presentation-end)
+(define-key org-simple-presentation-mode-map "\C-cn" 'org-simple-presentation-goto-next)
+(define-key org-simple-presentation-mode-map "\C-cp" 'org-simple-presentation-goto-previous)
 
 (provide 'org-simple-presentation-mode)
